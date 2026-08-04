@@ -13,6 +13,7 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.example.smsmonitor.util.NotificationHelper
+import com.example.smsmonitor.util.PreferencesManager
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
 /**
@@ -27,7 +28,10 @@ class MainActivity : AppCompatActivity() {
     ) { result ->
         val allGranted = result.values.all { it }
         if (allGranted) {
-            NotificationHelper.showRunningNotification(this)
+            val prefs = PreferencesManager(this@MainActivity)
+            if (prefs.isMonitoringEnabled()) {
+                NotificationHelper.showRunningNotification(this@MainActivity)
+            }
         }
     }
 
