@@ -33,6 +33,8 @@ class KeywordAdapter(
 
         fun bind(keyword: Keyword) {
             binding.textKeyword.text = keyword.text
+            // 先置空 listener 再设置 checked 状态，避免 setChecked 触发回调导致不必要的数据库写入
+            binding.switchEnabled.setOnCheckedChangeListener(null)
             binding.switchEnabled.isChecked = keyword.isEnabled
             binding.switchEnabled.setOnCheckedChangeListener { _, _ ->
                 onToggleClick(keyword)
