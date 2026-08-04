@@ -1,0 +1,20 @@
+# Gradle
+.gradle/
+build/
+**/build/
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+
+# Local machine configuration
+local.properties
+
+# Generated artifacts
+captures/
+*.apk
+*.aab
+*.ap_
+
+# Logs
+*.log
