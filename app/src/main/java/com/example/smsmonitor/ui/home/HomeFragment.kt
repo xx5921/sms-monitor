@@ -36,7 +36,12 @@ class HomeFragment : Fragment() {
         // 监控开关
         binding.switchMonitoring.setOnCheckedChangeListener { _, isChecked ->
             viewModel.setMonitoringEnabled(isChecked)
-            if (isChecked) {
+        }
+
+        // 观察监控状态，同步 Switch 和状态文字
+        viewModel.isMonitoringEnabled.observe(viewLifecycleOwner) { enabled ->
+            binding.switchMonitoring.isChecked = enabled
+            if (enabled) {
                 binding.textStatus.text = "监控运行中"
                 binding.textStatus.setTextColor(
                     resources.getColor(android.R.color.holo_green_dark, null)
@@ -47,11 +52,6 @@ class HomeFragment : Fragment() {
                     resources.getColor(android.R.color.darker_gray, null)
                 )
             }
-        }
-
-        // 观察监控状态
-        viewModel.isMonitoringEnabled.observe(viewLifecycleOwner) { enabled ->
-            binding.switchMonitoring.isChecked = enabled
         }
 
         // 最近记录列表
