@@ -29,8 +29,14 @@
     <string name="force_ring">强制响铃（静音模式下也响铃）</string>
     <string name="vibration">振动提醒</string>
     <string name="ringtone_select">选择铃声</string>
+    <string name="ringtone_reset_default">恢复系统默认</string>
     <string name="battery_optimization">电池优化白名单</string>
     <string name="battery_optimization_desc">点击添加到电池优化白名单，确保后台不被杀死</string>
+
+    <!-- 响铃弹窗 -->
+    <string name="alert_popup_title">短信提醒</string>
+    <string name="alert_stop_ring">停止响铃</string>
+    <string name="alert_open_app">打开应用</string>
 
     <!-- 通用 -->
     <string name="confirm">确认</string>

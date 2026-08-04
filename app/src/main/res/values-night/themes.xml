@@ -13,4 +13,11 @@
         <item name="android:navigationBarColor" tools:targetApi="l">@color/black</item>
     </style>
 
+    <style name="Theme.SMSMonitor.AlertDialog" parent="Theme.Material3.DayNight.Dialog.Alert">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowCloseOnTouchOutside">false</item>
+        <item name="android:windowMinWidthMajor">90%</item>
+        <item name="android:windowMinWidthMinor">90%</item>
+    </style>
+
 </resources>

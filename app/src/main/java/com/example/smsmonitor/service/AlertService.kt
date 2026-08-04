@@ -15,6 +15,8 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.util.Log
+import androidx.core.app.NotificationManagerCompat
+import com.example.smsmonitor.AlertActivity
 import com.example.smsmonitor.util.NotificationHelper
 import com.example.smsmonitor.util.PreferencesManager
 
@@ -25,6 +27,7 @@ import com.example.smsmonitor.util.PreferencesManager
 class AlertService : Service() {
 
     companion object {
+        const val ACTION_STOP_ALERT = "com.example.smsmonitor.action.STOP_ALERT"
         const val EXTRA_SENDER = "extra_sender"
         const val EXTRA_CONTENT = "extra_content"
         const val EXTRA_MATCHED_KEYWORDS = "extra_matched_keywords"
@@ -40,6 +43,7 @@ class AlertService : Service() {
 
     // 保存原始音量，用于恢复
     private var originalVolume = 0
+    private var isVolumeBoosted = false
     private var audioManager: AudioManager? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -51,6 +55,12 @@ class AlertService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == ACTION_STOP_ALERT) {
+            Log.d(TAG, "用户停止响铃提醒")
+            stopAndCleanup()
+            return START_NOT_STICKY
+        }
+
         val sender = intent?.getStringExtra(EXTRA_SENDER) ?: "未知号码"
         val content = intent?.getStringExtra(EXTRA_CONTENT) ?: ""
         val matchedKeywords = intent?.getStringExtra(EXTRA_MATCHED_KEYWORDS) ?: ""
@@ -66,6 +76,9 @@ class AlertService : Service() {
         // 发送高优先级通知
         NotificationHelper.sendAlertNotification(this, sender, content, matchedKeywords)
 
+        // 尝试显示带停止按钮的提醒弹窗
+        showAlertPopup(sender, content, matchedKeywords)
+
         // 开始多次响铃
         startRepeatedRinging()
 
@@ -76,6 +89,9 @@ class AlertService : Service() {
      * 开始多次响铃
      */
     private fun startRepeatedRinging() {
+        timer?.cancel()
+        mediaPlayer?.release()
+        mediaPlayer = null
         currentRingCount = 0
         val totalRings = prefs.getRingCount()
         val intervalMs = prefs.getRingIntervalSeconds() * 1000L
@@ -99,6 +115,24 @@ class AlertService : Service() {
     }
 
     /**
+     * 尝试显示响铃提醒弹窗。
+     *
+     * Args:
+     *     sender: 短信发送方。
+     *     content: 短信内容。
+     *     matchedKeywords: 命中的关键词。
+     */
+    private fun showAlertPopup(sender: String, content: String, matchedKeywords: String) {
+        try {
+            startActivity(
+                AlertActivity.createIntent(this, sender, content, matchedKeywords)
+            )
+        } catch (e: Exception) {
+            Log.w(TAG, "显示响铃弹窗失败，保留通知按钮作为兜底", e)
+        }
+    }
+
+    /**
      * 播放一次铃声
      */
     private fun playRing() {
@@ -107,7 +141,10 @@ class AlertService : Service() {
         // 如果开启强制响铃，调大音量
         if (prefs.isForceRingEnabled()) {
             audioManager?.let { am ->
-                originalVolume = am.getStreamVolume(AudioManager.STREAM_MUSIC)
+                if (!isVolumeBoosted) {
+                    originalVolume = am.getStreamVolume(AudioManager.STREAM_MUSIC)
+                    isVolumeBoosted = true
+                }
                 am.setStreamVolume(
                     AudioManager.STREAM_MUSIC,
                     am.getStreamMaxVolume(AudioManager.STREAM_MUSIC),
@@ -151,9 +188,7 @@ class AlertService : Service() {
                     mediaPlayer = null
                     // 恢复音量
                     if (prefs.isForceRingEnabled()) {
-                        audioManager?.setStreamVolume(
-                            AudioManager.STREAM_MUSIC, originalVolume, 0
-                        )
+                        restoreVolume()
                     }
                 }
                 prepare()
@@ -202,14 +237,23 @@ class AlertService : Service() {
         timer = null
         mediaPlayer?.release()
         mediaPlayer = null
-        // 恢复音量
-        if (prefs.isForceRingEnabled()) {
-            audioManager?.setStreamVolume(
-                AudioManager.STREAM_MUSIC, originalVolume, 0
-            )
-        }
+        vibrator?.cancel()
+        restoreVolume()
+        NotificationManagerCompat.from(this).cancel(NotificationHelper.NOTIFICATION_ID_ALERT)
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
+    }
+
+    /**
+     * 恢复强制响铃前的媒体音量。
+     */
+    private fun restoreVolume() {
+        if (!isVolumeBoosted) return
+
+        audioManager?.setStreamVolume(
+            AudioManager.STREAM_MUSIC, originalVolume, 0
+        )
+        isVolumeBoosted = false
     }
 
     override fun onDestroy() {
@@ -217,5 +261,7 @@ class AlertService : Service() {
         timer?.cancel()
         mediaPlayer?.release()
         mediaPlayer = null
+        vibrator?.cancel()
+        restoreVolume()
     }
 }

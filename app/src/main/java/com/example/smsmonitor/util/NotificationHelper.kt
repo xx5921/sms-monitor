@@ -9,8 +9,9 @@ import android.content.Intent
 import android.graphics.Color
 import android.os.Build
 import androidx.core.app.NotificationCompat
-import com.example.smsmonitor.MainActivity
+import com.example.smsmonitor.AlertActivity
 import com.example.smsmonitor.R
+import com.example.smsmonitor.service.AlertService
 
 /**
  * 通知工具类
@@ -70,9 +71,10 @@ object NotificationHelper {
     ): Notification {
         val pendingIntent = PendingIntent.getActivity(
             context, 0,
-            Intent(context, MainActivity::class.java),
+            AlertActivity.createIntent(context, sender, content, ""),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+        val stopIntent = createStopAlertPendingIntent(context)
 
         return NotificationCompat.Builder(context, CHANNEL_ALERT)
             .setSmallIcon(R.drawable.ic_sms_notification)
@@ -82,6 +84,12 @@ object NotificationHelper {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setContentIntent(pendingIntent)
+            .setFullScreenIntent(pendingIntent, true)
+            .addAction(
+                R.drawable.ic_sms_notification,
+                "停止响铃",
+                stopIntent
+            )
             .setAutoCancel(true)
             .build()
     }
@@ -97,9 +105,10 @@ object NotificationHelper {
     ) {
         val pendingIntent = PendingIntent.getActivity(
             context, 0,
-            Intent(context, MainActivity::class.java),
+            AlertActivity.createIntent(context, sender, content, matchedKeywords),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+        val stopIntent = createStopAlertPendingIntent(context)
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ALERT)
             .setSmallIcon(R.drawable.ic_sms_notification)
@@ -111,6 +120,12 @@ object NotificationHelper {
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setContentIntent(pendingIntent)
+            .setFullScreenIntent(pendingIntent, true)
+            .addAction(
+                R.drawable.ic_sms_notification,
+                "停止响铃",
+                stopIntent
+            )
             .setAutoCancel(true)
             .build()
 
@@ -124,7 +139,7 @@ object NotificationHelper {
     fun showRunningNotification(context: Context) {
         val pendingIntent = PendingIntent.getActivity(
             context, 0,
-            Intent(context, MainActivity::class.java),
+            Intent(context, com.example.smsmonitor.MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
@@ -147,5 +162,27 @@ object NotificationHelper {
     fun cancelRunningNotification(context: Context) {
         val manager = context.getSystemService(NotificationManager::class.java)
         manager.cancel(NOTIFICATION_ID_RUNNING)
+    }
+
+    /**
+     * 创建停止提醒服务的 PendingIntent。
+     *
+     * Args:
+     *     context: 上下文对象。
+     *
+     * Returns:
+     *     点击通知动作时发送给提醒服务的 PendingIntent。
+     */
+    private fun createStopAlertPendingIntent(context: Context): PendingIntent {
+        val intent = Intent(context, AlertService::class.java).apply {
+            action = AlertService.ACTION_STOP_ALERT
+        }
+
+        return PendingIntent.getService(
+            context,
+            1,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
     }
 }
