@@ -42,9 +42,6 @@ class AlertService : Service() {
     private var currentRingCount = 0
     private var timer: CountDownTimer? = null
 
-    // 唤醒锁，防止设备休眠中断响铃
-    private var wakeLock: PowerManager.WakeLock? = null
-
     // 保存原始音量，用于恢复
     private var originalVolume = 0
     private var isVolumeBoosted = false
@@ -99,9 +96,6 @@ class AlertService : Service() {
         currentRingCount = 0
         val totalRings = prefs.getRingCount()
         val intervalMs = prefs.getRingIntervalSeconds() * 1000L
-
-        // 获取唤醒锁，确保设备休眠期间也能正常响铃
-        acquireWakeLock()
 
         playRing()
 
@@ -247,7 +241,6 @@ class AlertService : Service() {
         mediaPlayer = null
         vibrator?.cancel()
         restoreVolume()
-        releaseWakeLock()
         NotificationManagerCompat.from(this).cancel(NotificationHelper.NOTIFICATION_ID_ALERT)
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
@@ -272,33 +265,5 @@ class AlertService : Service() {
         mediaPlayer = null
         vibrator?.cancel()
         restoreVolume()
-        releaseWakeLock()
-    }
-
-    /**
-     * 获取 CPU 唤醒锁，确保设备休眠期间提醒服务正常运行。
-     */
-    private fun acquireWakeLock() {
-        if (wakeLock?.isHeld == true) return
-        wakeLock = (getSystemService(POWER_SERVICE) as PowerManager).run {
-            newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "sms-monitor:AlertWakeLock").apply {
-                setReferenceCounted(false)
-                acquire(10 * 60 * 1000L) // 最长持有 10 分钟
-            }
-        }
-    }
-
-    /**
-     * 释放唤醒锁。
-     */
-    private fun releaseWakeLock() {
-        try {
-            wakeLock?.let {
-                if (it.isHeld) it.release()
-            }
-        } catch (e: Exception) {
-            Log.w(TAG, "释放唤醒锁失败", e)
-        }
-        wakeLock = null
     }
 }
