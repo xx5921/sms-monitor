@@ -9,6 +9,7 @@ import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.smsmonitor.databinding.FragmentHomeBinding
 import com.example.smsmonitor.ui.records.SmsRecordAdapter
+import com.example.smsmonitor.util.NotificationHelper
 
 /**
  * 首页 Fragment
@@ -38,7 +39,7 @@ class HomeFragment : Fragment() {
             viewModel.setMonitoringEnabled(isChecked)
         }
 
-        // 观察监控状态，同步 Switch 和状态文字
+        // 观察监控状态，同步 Switch、状态文字和状态栏通知
         viewModel.isMonitoringEnabled.observe(viewLifecycleOwner) { enabled ->
             binding.switchMonitoring.isChecked = enabled
             if (enabled) {
@@ -46,11 +47,13 @@ class HomeFragment : Fragment() {
                 binding.textStatus.setTextColor(
                     resources.getColor(android.R.color.holo_green_dark, null)
                 )
+                NotificationHelper.showRunningNotification(requireContext())
             } else {
                 binding.textStatus.text = "监控已停止"
                 binding.textStatus.setTextColor(
                     resources.getColor(android.R.color.darker_gray, null)
                 )
+                NotificationHelper.cancelRunningNotification(requireContext())
             }
         }
 
