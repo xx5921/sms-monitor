@@ -247,5 +247,14 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- 版本信息 -->
+        <TextView
+            android:id="@+id/textVersion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textColor="@color/gray"
+            android:textSize="12sp" />
+
     </LinearLayout>
 </ScrollView>

@@ -13,6 +13,7 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import com.example.smsmonitor.R
 import com.example.smsmonitor.databinding.FragmentSettingsBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.slider.Slider
@@ -61,6 +62,20 @@ class SettingsFragment : Fragment() {
         setupToggles()
         setupRingtoneSelection()
         setupBatteryOptimization()
+        setupVersionInfo()
+    }
+
+    /**
+     * 在设置页底部展示当前应用版本号
+     */
+    private fun setupVersionInfo() {
+        val versionName = try {
+            requireContext().packageManager
+                .getPackageInfo(requireContext().packageName, 0).versionName
+        } catch (e: Exception) {
+            null
+        }
+        binding.textVersion.text = "${getString(R.string.app_name)} v${versionName ?: "未知"}"
     }
 
     /**
